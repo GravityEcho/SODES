@@ -2,7 +2,8 @@
 Simple Open Dance Evaluation Server - そうです
 
 The goal of this project is to offer a browser-based dance game with qualities similar to games like Dance Dance Revolution, and its PC counterpart Stepmania.
-All files can and should be hosted by a web server. I currently recommend dockerized nginx (https://docs.linuxserver.io/images/docker-nginx/).
+All files can and should be hosted by a web server. 
+I currently recommend dockerized nginx (https://docs.linuxserver.io/images/docker-nginx/).
 
 
 phases of development:

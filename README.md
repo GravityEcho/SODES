@@ -23,6 +23,7 @@ maintain the code
 
 
 What works:
+
 keyboard navigation of menus
 index.html presents song collection directories and allows the user to select a collection.
 upon collection selection (hehe) the song directories are displayed with images and details, the user can navigate the songs with arrow keys and the songs play automatically.
@@ -30,4 +31,5 @@ upon collection selection (hehe) the song directories are displayed with images 
 
 
 What doesn't work:
+
 anything else.

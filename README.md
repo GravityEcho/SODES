@@ -8,13 +8,16 @@ All files can and should be hosted by a web server. I recommend dockerized nginx
 phases of development:
 
 phase 1 - current
+
 Create a working basic game experience using stepmania and DDR as references.
 Keep the code as simple and modular as possible while keeping the end user experience as top priority.
 
 phase 2 - 
+
 Enhance the code with features, optimize and polish the code
 
 phase 3 - 
+
 maintain the code
 
 

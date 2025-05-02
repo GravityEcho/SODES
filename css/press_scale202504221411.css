@@ -1,0 +1,95 @@
+.arrow {
+    width: 100px;  /* Example width */
+    height: 100px; /* Example height */
+    background-size: contain; /* Ensure the image scales correctly */
+    background-repeat: no-repeat; /* Prevent the image from repeating */
+    display: inline-block; /* Make divs behave like inline-block elements */
+    transition: transform 0.1s ease; /* Smooth transition for the scaling */
+}
+
+/* Initial background images for arrows */
+.left {
+    background-image: url('../note/inactive.png'); /* Default inactive image */
+    transform: rotate(90deg); /* Rotate left arrow */
+}
+
+.down {
+    background-image: url('../note/inactive.png'); /* Default inactive image */
+    /* No rotation needed for down arrow */
+}
+
+.up {
+    background-image: url('../note/inactive.png'); /* Default inactive image */
+    transform: rotate(180deg); /* Rotate up arrow */
+}
+
+.right {
+    background-image: url('../note/inactive.png'); /* Default inactive image */
+    transform: rotate(270deg); /* Rotate right arrow */
+}
+
+/* Scale the active arrows without changing their orientation */
+.arrow.active {
+    transform: scale(0.9); /* Scale down to 90% when active */
+}
+
+/* Specific styles for active state, keep the rotation */
+.arrow.down.active {
+    background-image: url('../note/active.png');
+}
+
+.arrow.right.active {
+    background-image: url('../note/active.png');
+    transform: rotate(270deg) scale(0.9); /* Maintain rotation for left while scaling */
+}
+
+.arrow.up.active {
+    background-image: url('../note/active.png');
+    transform: rotate(180deg) scale(0.9); /* Maintain rotation for up while scaling */
+}
+
+.arrow.left.active {
+    background-image: url('../note/active.png');
+    transform: rotate(90deg) scale(0.9); /* Maintain rotation for left while scaling */
+}
+/* player 2 Initial background images for arrows */
+.left2 {
+    background-image: url('../note/inactive.png'); /* Default inactive image */
+    transform: rotate(90deg); /* Rotate left arrow */
+}
+
+.down2 {
+    background-image: url('../note/inactive.png'); /* Default inactive image */
+    /* No rotation needed for down arrow */
+}
+
+.up2 {
+    background-image: url('../note/inactive.png'); /* Default inactive image */
+    transform: rotate(180deg); /* Rotate up arrow */
+}
+
+.right2 {
+    background-image: url('../note/inactive.png'); /* Default inactive image */
+    transform: rotate(270deg); /* Rotate right arrow */
+}
+
+
+/* Specific styles for active state, keep the rotation */
+.arrow.down2.active {
+    background-image: url('../note/active.png');
+}
+
+.arrow.right2.active {
+    background-image: url('../note/active.png');
+    transform: rotate(270deg) scale(0.9); /* Maintain rotation for left while scaling */
+}
+
+.arrow.up2.active {
+    background-image: url('../note/active.png');
+    transform: rotate(180deg) scale(0.9); /* Maintain rotation for up while scaling */
+}
+
+.arrow.left2.active {
+    background-image: url('../note/active.png');
+    transform: rotate(90deg) scale(0.9); /* Maintain rotation for left while scaling */
+}

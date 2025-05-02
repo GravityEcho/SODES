@@ -1,0 +1,244 @@
+<html>
+<head>
+<style>
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+  color: #fff;
+  margin: 0;
+  height: 100vh;
+  display: flex;
+  justify-content: center; /* Center horizontally */
+  align-items: center;     /* Center vertically */
+  overflow: hidden;
+}
+
+/* Full viewport container for the interactive arc */
+.menu-container {
+  position: absolute;
+  width: 100%;
+  height: 100vh; /* Full height to fill the screen */
+  overflow: hidden;
+  background: rgba(0,0,0,0.4);
+  backdrop-filter: blur(8px); /* Adds a subtle background blur for depth */
+}
+
+/* Arc wrapper positioned in the center of the container */
+.arc-wrapper {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  height: auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Each menu item style */
+.menu-item {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px 14px;
+  margin: 4px 0;
+  border: 2px solid #fff;
+  border-radius: 10px;
+  cursor: pointer;
+  background: linear-gradient(145deg, #ffffff20, #ffffff10);
+  box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+  transition: transform 0.3s ease, opacity 0.5s ease, border-color 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+  will-change: transform, opacity;
+  opacity: 0; /* start hidden, animate in */
+  backdrop-filter: blur(4px);
+}
+
+.menu-item:hover {
+  background: linear-gradient(145deg, #ffffff30, #ffffff20);
+  box-shadow: 0 12px 20px rgba(0,0,0,0.3);
+  transform: scale(1.05);
+  border-color: #ffd700; /* golden border on hover */
+}
+
+.menu-item.selected {
+  border-color: #ffd700;
+  background: linear-gradient(145deg, #ffd70033, #ffd70022);
+  transform: scale(1.2);
+  box-shadow: 0 12px 25px rgba(0,0,0,0.4);
+}
+
+.menu-item img {
+  max-width: 100%;
+  max-height: auto;
+  object-fit: contain;
+  border-radius: 8px;
+  margin-bottom: 8px;
+  transition: transform 0.3s ease;
+}
+
+.menu-item:hover img {
+  transform: scale(1.2);
+}
+
+.menu-item span {
+  display: block;
+  font-weight: bold;
+  font-size: 1rem;
+  text-align: center;
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+
+.menu-item small {
+  font-size: 0.8rem;
+  color: #ddd;
+  margin-top: 4px;
+}
+</style>
+</head>
+<body>
+<div class="menu-container" id="menuContainer">
+  <div class="arc-wrapper" id="arcWrapper"></div>
+</div>
+
+<script>
+const fetchSongs = fetch('php/listsongs.php').then(r => r.json());
+const audio = new Audio();
+
+let menuItems = [];
+let songs = [];
+let selectedIndex = 0;
+
+// Arc parameters
+const radius = Math.min(window.innerWidth, window.innerHeight) * 0.45; // slightly larger radius
+const n = () => menuItems.length;
+
+// Initialize menu
+fetchSongs.then(songsData => {
+  songs = songsData.filter(s => !s.endsWith('-bg'));
+  initializeMenu(songs);
+});
+
+// Fetch song details
+async function fetchDetails(song) {
+  try {
+    const res = await fetch(`content/songs/konami/${song}/${song}.dwi`);
+    const text = await res.text();
+    const parse = (regex) => {
+      const match = text.match(regex);
+      return match ? match[1].trim() : 'Unknown';
+    };
+    return {
+      artist: parse(/#ARTIST:(.+?);/),
+      bpm: parse(/#BPM:(.+?);/),
+      displayBpm: parse(/#DISPLAYBPM:(.+?);/),
+      gap: parse(/#GAP:(.+?);/),
+      sampleStart: parse(/#SAMPLESTART:(.+?);/)
+    };
+  } catch {
+    return { artist: 'Artist Unknown', bpm: 'BPM Unknown', displayBpm: 'Display BPM Unknown', gap: 'Gap Unknown', sampleStart: 'Sample Start Unknown' };
+  }
+}
+
+async function initializeMenu(songs) {
+  const container = document.getElementById('arcWrapper');
+  container.innerHTML = '';
+
+  // Create menu items
+  for (const song of songs) {
+    const details = await fetchDetails(song);
+    const item = document.createElement('div');
+    item.className = 'menu-item';
+    item.innerHTML = `
+      <img src="content/songs/konami/${song}/${song}.png" alt="${song}">
+      <span>${song}</span>
+      <small>${details.artist}</small>
+    `;
+    container.appendChild(item);
+    menuItems.push(item);
+  }
+
+  // Initial position
+  updateArcPositions();
+
+  // Set first item as selected
+  selectItem(selectedIndex, false);
+
+  // Keyboard controls
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight') {
+      rotateArc(1);
+    } else if (e.key === 'ArrowLeft') {
+      rotateArc(-1);
+    }
+  });
+
+  // Resize handler to update radius if needed
+  window.addEventListener('resize', () => {
+    // Optional: update radius dynamically
+  });
+}
+
+// Function to update positions along the arc
+function updateArcPositions() {
+  const nItems = menuItems.length;
+  for (let i = 0; i < nItems; i++) {
+    let offset = i - selectedIndex;
+
+    // Wrap around
+    if (offset > nItems / 2) offset -= nItems;
+    if (offset < -nItems / 2) offset += nItems;
+
+    const maxAngle = Math.PI / 2; // 90 degrees spread
+    const angle = (offset / (nItems / 2)) * maxAngle;
+
+    const x = Math.sin(angle) * radius;
+    const y = Math.cos(angle) * radius;
+
+    const opacity = Math.cos(angle) * 0.8 + 0.2; // between 0.2 and 1
+
+    const item = menuItems[i];
+    item.style.transform = `
+      translateX(${x}px)
+      translateY(${-y}px)
+      rotate(${angle * (180/Math.PI) * 0.3}deg)
+    `;
+    item.style.opacity = opacity;
+    item.style.zIndex = (i === selectedIndex) ? 10 : 1;
+  }
+}
+
+// Function to select and highlight an item
+function selectItem(index, animate = true) {
+  menuItems.forEach((item, i) => {
+    if (i === index) {
+      item.classList.add('selected');
+    } else {
+      item.classList.remove('selected');
+    }
+  });
+  // Play song
+  const songName = songs[index];
+  audio.src = `content/songs/konami/${songName}/${songName}.mp3`;
+  audio.play();
+}
+
+// Function to rotate the arc
+function rotateArc(direction) {
+  selectedIndex = (selectedIndex + direction + menuItems.length) % menuItems.length;
+  updateArcPositions();
+  // Optional: add slight delay for smooth transition
+  setTimeout(() => {
+    updateArcPositions();
+  }, 50);
+  selectItem(selectedIndex);
+}
+</script>
+</body>
+</html>

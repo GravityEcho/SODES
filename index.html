@@ -1,6 +1,8 @@
 <html>
 <head>
 <style>
+/* ... (existing styles remain unchanged) ... */
+
 * {
   box-sizing: border-box;
 }
@@ -108,27 +110,77 @@ body {
 </div>
 
 <script>
-const fetchSongs = fetch('php/listsongs.php').then(r => r.json());
+const fetchCollections = fetch('php/listcollection.php').then(r => r.json()); // Collections
+const fetchSongsInCollection = (collection) => fetch(`php/listsongs.php?collection=${encodeURIComponent(collection)}`).then(r => r.json());
+
 const audio = new Audio();
 
 let menuItems = [];
+let collections = [];
 let songs = [];
+let currentMode = 'collections'; // 'collections' or 'songs'
 let selectedIndex = 0;
+let currentCollection = null; // store selected collection name
 
 // Arc parameters
-const radius = Math.min(window.innerWidth, window.innerHeight) * 0.45; // slightly larger radius
-const n = () => menuItems.length;
+const radius = Math.min(window.innerWidth, window.innerHeight) * 0.45;
 
-// Initialize menu
-fetchSongs.then(songsData => {
-  songs = songsData.filter(s => !s.endsWith('-bg'));
-  initializeMenu(songs);
+fetchCollections.then(colData => {
+  collections = colData; // array of collection names
+  initializeCollectionsMenu();
 });
+
+// Initialize collections menu
+function initializeCollectionsMenu() {
+  currentMode = 'collections';
+  menuItems = [];
+  const container = document.getElementById('arcWrapper');
+  container.innerHTML = '';
+
+  collections.forEach((col, i) => {
+    const item = document.createElement('div');
+    item.className = 'menu-item';
+    item.innerHTML = `<span>${col}</span>`;
+    container.appendChild(item);
+    menuItems.push(item);
+  });
+  selectedIndex = 0;
+  updateArcPositions();
+  selectItem(selectedIndex);
+}
+
+// Initialize songs menu for a specific collection
+function initializeSongsMenu(songsArray, collectionName) {
+  currentMode = 'songs';
+  songs = songsArray;
+  currentCollection = collectionName; // save selected collection
+  menuItems = [];
+  const container = document.getElementById('arcWrapper');
+  container.innerHTML = '';
+
+  (async () => {
+    for (const song of songs) {
+      const details = await fetchDetails(song);
+      const item = document.createElement('div');
+      item.className = 'menu-item';
+      item.innerHTML = `
+        <img src="content/songs/${currentCollection}/${song}/${song}.png" alt="${song}">
+        <span>${song}</span>
+        <small>${details.artist}</small>
+      `;
+      container.appendChild(item);
+      menuItems.push(item);
+    }
+    selectedIndex = 0;
+    updateArcPositions();
+    selectItem(selectedIndex);
+  })();
+}
 
 // Fetch song details
 async function fetchDetails(song) {
   try {
-    const res = await fetch(`content/songs/konami/${song}/${song}.dwi`);
+    const res = await fetch(`content/songs/${currentCollection}/${song}/${song}.dwi`);
     const text = await res.text();
     const parse = (regex) => {
       const match = text.match(regex);
@@ -146,62 +198,22 @@ async function fetchDetails(song) {
   }
 }
 
-async function initializeMenu(songs) {
-  const container = document.getElementById('arcWrapper');
-  container.innerHTML = '';
-
-  // Create menu items
-  for (const song of songs) {
-    const details = await fetchDetails(song);
-    const item = document.createElement('div');
-    item.className = 'menu-item';
-    item.innerHTML = `
-      <img src="content/songs/konami/${song}/${song}.png" alt="${song}">
-      <span>${song}</span>
-      <small>${details.artist}</small>
-    `;
-    container.appendChild(item);
-    menuItems.push(item);
-  }
-
-  // Initial position
-  updateArcPositions();
-
-  // Set first item as selected
-  selectItem(selectedIndex, false);
-
-  // Keyboard controls
-  document.addEventListener('keydown', e => {
-    if (e.key === 'ArrowRight') {
-      rotateArc(1);
-    } else if (e.key === 'ArrowLeft') {
-      rotateArc(-1);
-    }
-  });
-
-  // Resize handler to update radius if needed
-  window.addEventListener('resize', () => {
-    // Optional: update radius dynamically
-  });
-}
-
-// Function to update positions along the arc
+// Arc position update
 function updateArcPositions() {
   const nItems = menuItems.length;
   for (let i = 0; i < nItems; i++) {
     let offset = i - selectedIndex;
 
-    // Wrap around
     if (offset > nItems / 2) offset -= nItems;
     if (offset < -nItems / 2) offset += nItems;
 
-    const maxAngle = Math.PI / 2; // 90 degrees spread
+    const maxAngle = Math.PI / 2;
     const angle = (offset / (nItems / 2)) * maxAngle;
 
     const x = Math.sin(angle) * radius;
     const y = Math.cos(angle) * radius;
 
-    const opacity = Math.cos(angle) * 0.8 + 0.2; // between 0.2 and 1
+    const opacity = Math.cos(angle) * 0.8 + 0.2;
 
     const item = menuItems[i];
     item.style.transform = `
@@ -214,8 +226,8 @@ function updateArcPositions() {
   }
 }
 
-// Function to select and highlight an item
-function selectItem(index, animate = true) {
+// Select item
+function selectItem(index, playSound = true) {
   menuItems.forEach((item, i) => {
     if (i === index) {
       item.classList.add('selected');
@@ -223,22 +235,60 @@ function selectItem(index, animate = true) {
       item.classList.remove('selected');
     }
   });
-  // Play song
-  const songName = songs[index];
-  audio.src = `content/songs/konami/${songName}/${songName}.mp3`;
-  audio.play();
+  if (currentMode === 'songs') {
+    const songName = songs[index];
+    // Use currentCollection for path
+    audio.src = `content/songs/${currentCollection}/${songName}/${songName}.mp3`;
+    audio.play();
+  }
 }
 
-// Function to rotate the arc
+// Rotate arc
 function rotateArc(direction) {
+  if (menuItems.length === 0) return;
   selectedIndex = (selectedIndex + direction + menuItems.length) % menuItems.length;
   updateArcPositions();
-  // Optional: add slight delay for smooth transition
   setTimeout(() => {
     updateArcPositions();
   }, 50);
   selectItem(selectedIndex);
 }
+
+// Key handling
+document.addEventListener('keydown', e => {
+  if (currentMode === 'collections') {
+    if (e.key === 'ArrowRight') {
+      rotateArc(1);
+    } else if (e.key === 'ArrowLeft') {
+      rotateArc(-1);
+    } else if (e.key === 'Enter') {
+      // Load songs for selected collection
+      const collectionName = collections[selectedIndex];
+      fetch(`php/listsongs.php?collection=${encodeURIComponent(collectionName)}`)
+        .then(r => r.json())
+        .then(songsData => {
+          initializeSongsMenu(songsData, collectionName);
+        });
+    }
+  } else if (currentMode === 'songs') {
+    if (e.key === 'ArrowRight') {
+      rotateArc(1);
+    } else if (e.key === 'ArrowLeft') {
+      rotateArc(-1);
+    } else if (e.key === 'Enter') {
+      // Play song
+      const songName = songs[selectedIndex];
+      // Path uses currentCollection
+      audio.src = `content/songs/${currentCollection}/${songName}/${songName}.mp3`;
+      audio.play();
+    }
+  }
+});
+
+// Optional resize handler
+window.addEventListener('resize', () => {
+  // Optional: recalculate radius if desired
+});
 </script>
 </body>
 </html>

@@ -105,6 +105,25 @@ body {
 </style>
 </head>
 <body>
+    <div id="noCollectionsMessage" style="
+  display: none;
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  background: rgba(0,0,0,0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+  font-size: 1.5rem;
+  color: #fff;
+  text-align: center;
+  padding: 20px;
+  box-sizing: border-box;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+">
+  no collections found in content/songs/
+</div>
 <div class="menu-container" id="menuContainer">
   <div class="arc-wrapper" id="arcWrapper"></div>
 </div>
@@ -125,11 +144,21 @@ let currentCollection = null; // store selected collection name
 // Arc parameters
 const radius = Math.min(window.innerWidth, window.innerHeight) * 0.45;
 
-fetchCollections.then(colData => {
-  collections = colData; // array of collection names
-  initializeCollectionsMenu();
-});
+const noCollectionsOverlay = document.getElementById('noCollectionsMessage');
 
+fetchCollections.then(colData => {
+  if (Array.isArray(colData) && colData.length === 0) {
+    // Show the message overlay
+    noCollectionsOverlay.style.display = 'flex';
+    // Clear the arc wrapper in case anything is there
+    document.getElementById('arcWrapper').innerHTML = '';
+  } else {
+    // Hide the overlay if visible
+    noCollectionsOverlay.style.display = 'none';
+    collections = colData; // array of collection names
+    initializeCollectionsMenu();
+  }
+});
 // Initialize collections menu
 function initializeCollectionsMenu() {
   currentMode = 'collections';

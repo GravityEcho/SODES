@@ -271,18 +271,16 @@ document.addEventListener('keydown', e => {
         });
     }
   } else if (currentMode === 'songs') {
-    if (e.key === 'ArrowRight') {
-      rotateArc(1);
-    } else if (e.key === 'ArrowLeft') {
-      rotateArc(-1);
-    } else if (e.key === 'Enter') {
-      // Play song
-      const songName = songs[selectedIndex];
-      // Path uses currentCollection
-      audio.src = `content/songs/${currentCollection}/${songName}/${songName}.mp3`;
-      audio.play();
-    }
+  if (e.key === 'ArrowRight') {
+    rotateArc(1);
+  } else if (e.key === 'ArrowLeft') {
+    rotateArc(-1);
+  } else if (e.key === 'Enter') {
+    const songName = songs[selectedIndex];
+    // Redirect to gameplay.php with collection and song as query params
+    window.location.href = `php/gameplay.php?collection=${encodeURIComponent(currentCollection)}&song=${encodeURIComponent(songName)}`;
   }
+}
 });
 
 // Optional resize handler

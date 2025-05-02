@@ -1,19 +1,29 @@
 <?php
-// Set the target directory
-$directoryPath = '../content/songs/konami';
+// Get the collection name from query parameter
+$collection = isset($_GET['collection']) ? $_GET['collection'] : null;
 
-// Initialize an empty array to hold the subdirectories
+if (!$collection) {
+    http_response_code(400); // Bad Request
+    echo json_encode(['error' => 'No collection specified.']);
+    exit;
+}
+
+// Sanitize collection name to prevent directory traversal
+$collectionSafe = basename($collection);
+
+// Set the target directory dynamically based on user input
+$directoryPath = "../content/songs/" . $collectionSafe;
+
+// Initialize an array to hold song directories
 $subdirectories = [];
 
 // Check if the directory exists
 if (is_dir($directoryPath)) {
     // Open the directory
     if ($handle = opendir($directoryPath)) {
-        // Loop through the directory entries
+        // Loop through directory entries
         while (false !== ($entry = readdir($handle))) {
-            // Skip the current and parent directory entries
             if ($entry !== '.' && $entry !== '..') {
-                // Build the full path
                 $fullPath = $directoryPath . '/' . $entry;
                 // Check if it's a directory
                 if (is_dir($fullPath)) {
@@ -21,21 +31,19 @@ if (is_dir($directoryPath)) {
                 }
             }
         }
-        // Close the directory handle
         closedir($handle);
     } else {
-        // Handle the error if the directory cannot be opened
-        http_response_code(500); // Internal Server Error
+        http_response_code(500);
         echo json_encode(['error' => 'Unable to open directory.']);
         exit;
     }
 } else {
-    // Handle the error if the directory does not exist
-    http_response_code(404); // Not Found
-    echo json_encode(['error' => 'Directory does not exist.']);
+    http_response_code(404);
+    echo json_encode(['error' => 'Collection does not exist.']);
     exit;
 }
 
-// Output the subdirectories in JSON format
+// Output the list of song directories
 header('Content-Type: application/json');
 echo json_encode($subdirectories);
+?>
